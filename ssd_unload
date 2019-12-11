@@ -1,0 +1,5 @@
+#!/bin/sh
+module="ssd"
+
+# invoke rmmod with all arguments we got
+/sbin/modprobe -r $module

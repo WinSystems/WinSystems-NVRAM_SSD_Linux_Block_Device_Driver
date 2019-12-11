@@ -1,0 +1,12 @@
+#!/bin/sh
+module="ssd"
+
+# Group: since distributions do it differently, look for wheel or use staff
+if grep '^staff:' /etc/group > /dev/null; then
+    group="staff"
+else
+    group="wheel"
+fi
+
+# invoke modprobe with all arguments
+/sbin/modprobe $module io=0x210

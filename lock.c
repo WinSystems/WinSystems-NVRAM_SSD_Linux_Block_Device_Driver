@@ -1,35 +1,44 @@
 //*****************************************************************************
-//	
-//	Copyright 2011 by WinSystems Inc.
 //
-//	Permission is hereby granted to the purchaser of WinSystems GPIO cards 
-//	and CPU products incorporating a GPIO device, to distribute any binary 
-//	file or files compiled using this source code directly or in any work 
-//	derived by the user from this file. In no case may the source code, 
-//	original or derived from this file, be distributed to any third party 
-//	except by explicit permission of WinSystems. This file is distributed 
-//	on an "As-is" basis and no warranty as to performance or fitness of pur-
-//	poses is expressed or implied. In no case shall WinSystems be liable for 
-//	any direct or indirect loss or damage, real or consequential resulting 
-//	from the usage of this source code. It is the user's sole responsibility 
-//	to determine fitness for any considered purpose.
+//   Copyright 2019, WinSystems Inc.
 //
-//*****************************************************************************
+//   Permission is hereby granted, free of charge, to any person obtaining a 
+//   copy of this software and associated documentation files (the "Software"), 
+//   to deal in the Software without restriction, including without limitation 
+//   the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+//   and/or sell copies of the Software, and to permit persons to whom the 
+//   Software is furnished to do so, subject to the following conditions:
 //
-//	Name	 : lock.c
+//   The above copyright notice and this permission notice shall be included 
+//   in all copies or substantial portions of the Software.
 //
-//	Project	 : SSD Write Protect Control Program
-//
-//	Author	 : Paul DeMetrotion
+//   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+//   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
+//   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+//   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//   DEALINGS IN THE SOFTWARE.
 //
 //*****************************************************************************
 //
-//	  Date		Revision	                Description
-//	--------	--------	---------------------------------------------
-//	07/01/11	  1.0		  Original Release	
+//    Name       : lock.c
+//
+//    Project    : NVRAM SSD Device Driver
+//
+//    Author     : Jack Smith
+//
+//    Description:
+//             This module contains the implementation lock/unlock application
+//             for the block device driver for the NV-RAM SSD
 //
 //*****************************************************************************
-
+//
+//      Date         Revision    Change Description
+//    --------       --------    ---------------------------------------------
+//    2019/12/11      1.01      Updated for kernel v4.18
+//
+//*****************************************************************************
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>

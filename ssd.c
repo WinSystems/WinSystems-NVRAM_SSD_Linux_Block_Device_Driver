@@ -458,6 +458,6 @@ module_param(io, int, S_IRUGO);
 module_init(ssd_init);
 module_exit(ssd_exit);
 
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("MIT");
 MODULE_DESCRIPTION("WinSystems,Inc. SSD Device Driver");
 MODULE_AUTHOR("Paul DeMetrotion");

@@ -26,7 +26,7 @@
 //
 //    Project    : NVRAM SSD Device Driver
 //
-//    Author     : Jack Smith
+//    Author     : Paul DeMetrotion
 //
 //    Description:
 //             This module contains the implementation lock/unlock application

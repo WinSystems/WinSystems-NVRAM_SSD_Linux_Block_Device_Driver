@@ -26,7 +26,7 @@
 //
 //    Project    : NV-RAM SSD For WinSystems platforms
 //
-//    Author     : Jack Smith
+//    Author     : Paul DeMetrotion
 //
 //    Description:
 //             This module contains the definitions for the NV-RAM SSD

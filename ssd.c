@@ -26,7 +26,7 @@
 //
 //    Project    : NVRAM SSD Device Driver
 //
-//    Author     : Jack Smith
+//    Author     : Paul DeMetrotion
 //
 //    Description:
 //             This module contains the implementation of the block device
@@ -41,7 +41,7 @@
 //
 //*****************************************************************************
 
-static char *RCSInfo = "$Id: ssd.c,v 1.1 2019/11/28 20:31:10 tjsmith Exp tjsmith $";
+static char *RCSInfo = "$Id: ssd.c,v 1.01 2019/11/28 20:31:10 Paul DeMetrotion $";
 
 #ifndef __KERNEL__
 	#define __KERNEL__

@@ -26,7 +26,7 @@
 //
 //    Project    : NVRAM SSD library
 //
-//    Author     : Jack Smith
+//    Author     : Paul DeMetrotion
 //
 //    Description:
 //             This module contains the implementation of the block device
@@ -37,7 +37,7 @@
 //
 //      Date         Revision    Change Description
 //    --------       --------    ---------------------------------------------
-//    2019/12/11      1.01      Updated for kernel v4.18
+//    2019/12/11      1.01       Updated for kernel v4.18
 //
 //*****************************************************************************
 

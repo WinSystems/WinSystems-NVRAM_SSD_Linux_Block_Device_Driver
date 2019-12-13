@@ -1,0 +1,7 @@
+
+Release notes for the NV-SRAM SSD Linux device driver
+
+   Date        Revision      Notes
+----------    ----------    -------------------------------------------------------
+07/01/2011       v1.0       Original release, for kernel v 2.6.32
+12/11/2019       v1.01      Updated for kernel v 4.18.0

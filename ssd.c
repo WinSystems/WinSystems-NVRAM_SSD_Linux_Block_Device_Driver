@@ -63,6 +63,7 @@ static char *RCSInfo = "$Id: ssd.c,v 1.01 2019/11/28 20:31:10 Paul DeMetrotion $
 #include <linux/blkdev.h>
 #include <linux/hdreg.h>
 #include <linux/version.h>
+#include <linux/blk-mq.h>
 #include <asm/io.h>
 #include "ssd.h"
 
@@ -80,11 +81,11 @@ static struct ssd_bdevice {
 	short users;
 	spinlock_t lock;
 	struct gendisk *gd;
+	// request queue
+	struct request_queue *queue;
+	struct blk_mq_tag_set tag_set;
 	int wp_flag;
 } ssd_bdev;
-
-// request queue
-static struct request_queue *queue;
 
 // Driver major number
 static int ssd_init_major = 0;	// 0 = allocate dynamically
@@ -92,6 +93,7 @@ static int ssd_major;
 
 // Our modprobe command line arguments
 static int io = 0;
+
 
 ///**********************************************************************
 //			DEVICE SUBROUTINES
@@ -188,40 +190,66 @@ static void ssd_transfer(struct ssd_bdevice *bdev, sector_t sector, unsigned lon
 	}
 }
 
-static void ssd_request(struct request_queue *q)
+/* Serve requests */
+static int ssd_request(struct request *rq, unsigned int *nr_bytes)
 {
-	struct request *req;
+    int ret = 0;
+    struct bio_vec bvec;
+    struct req_iterator iter;
+	loff_t pos = blk_rq_pos(rq) << SECTOR_SHIFT;
 
-	req = blk_fetch_request(q);
 
-	while (req != NULL)
-	{
-		char *whereto;
+    /* Iterate over all requests segments */
+    rq_for_each_segment(bvec, rq, iter)
+    {
+        unsigned long b_len = bvec.bv_len;
 
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4,10,0)
-		if (req == NULL || (req->cmd_type != REQ_TYPE_FS))
-#else
-		if(req == NULL) 
-#endif
-		{
-			#ifdef DEBUG
-			printk ("<1>SSD - Skip non-CMD request\n");
-			#endif
-			__blk_end_request_all(req, -EIO);
-			continue;
-		}
-	
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4,10,0)
-		whereto = req->buffer;
-#else
-		whereto = bio_data(req->bio);
-#endif
-		ssd_transfer(&ssd_bdev, blk_rq_pos(req), blk_rq_cur_sectors(req), whereto, rq_data_dir(req));
- 
-		if (!__blk_end_request_cur(req, 0))
-			req = blk_fetch_request(q);
-	}
+        /* Get pointer to the data */
+        void* b_buf = page_address(bvec.bv_page) + bvec.bv_offset;
+
+        /* Simple check that we are not out of the memory bounds */
+        if ((pos + b_len) > ssd_bdev.size) {
+            b_len = (unsigned long)(ssd_bdev.size - pos);
+        }
+
+		ssd_transfer(&ssd_bdev, pos, b_len, b_buf, rq_data_dir(rq));
+
+        /* Increment counters */
+        pos += b_len;
+        *nr_bytes += b_len;
+    }
+
+    return ret;
 }
+/* queue callback function */
+static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_queue_data* bd)
+{
+    unsigned int nr_bytes = 0;
+    blk_status_t status = BLK_STS_OK;
+    struct request *rq = bd->rq;
+
+    /* Start request serving procedure */
+    blk_mq_start_request(rq);
+
+    if (ssd_request(rq, &nr_bytes) != 0) {
+        status = BLK_STS_IOERR;
+    }
+
+    /* Notify kernel about processed nr_bytes */
+    if (blk_update_request(rq, status, nr_bytes)) {
+        /* Shouldn't fail */
+        BUG();
+    }
+
+    /* Stop request serving procedure */
+    __blk_mq_end_request(rq, status);
+
+    return status;
+}
+
+static struct blk_mq_ops mq_ops = {
+    .queue_rq = queue_rq,
+};
 
 ///**********************************************************************
 //			DEVICE OPEN
@@ -385,14 +413,18 @@ static int __init ssd_init(void)
 	spin_lock_init(&ssd_bdev.lock);
 
 	// request queue
-	queue = blk_init_queue(ssd_request, &ssd_bdev.lock);
+    printk("Initializing queue\n");
 
-	if (queue == NULL)
-	{
-		printk("<1>SSD - No memory resources for request queue\n");
-		ret_val = -ENOMEM;
-		goto exit_bdev_unregister;
-	}
+    ssd_bdev.queue = blk_mq_init_sq_queue(&ssd_bdev.tag_set, &mq_ops, 128, BLK_MQ_F_SHOULD_MERGE);
+
+    if (ssd_bdev.queue == NULL) {
+        printk("Failed to allocate device queue\n");
+        unregister_blkdev(ssd_major, DRVR_NAME);
+        return -ENOMEM;
+    }
+
+    /* Set driver's structure as user data of the queue */
+    ssd_bdev.queue->queuedata = &ssd_bdev;
 
 	// gendisk
 	ssd_bdev.gd = alloc_disk(SSD_MINORS);
@@ -408,9 +440,10 @@ static int __init ssd_init(void)
 	ssd_bdev.gd->major = ssd_major;
 	ssd_bdev.gd->first_minor = 0;
 	ssd_bdev.gd->fops = &ssd_fops;
-	ssd_bdev.gd->queue = queue;
+	ssd_bdev.gd->queue = ssd_bdev.queue;
 	ssd_bdev.gd->private_data = &ssd_bdev;
 	strcpy(ssd_bdev.gd->disk_name, DRVR_NAME);
+    printk("Adding disk %s\n", ssd_bdev.gd->disk_name);
 	set_capacity(ssd_bdev.gd, NSECTORS * (LOGICAL_BLOCK_SIZE / KERNEL_SECTOR_SIZE));
 
 	// initialize wp flag to off
@@ -422,7 +455,7 @@ static int __init ssd_init(void)
 	return SUCCESS;
 
 exit_reqq_delete:
-	blk_cleanup_queue(queue);
+	blk_cleanup_queue(ssd_bdev.queue);
 
 exit_bdev_unregister:
 	unregister_blkdev(ssd_major, DRVR_NAME);
@@ -443,7 +476,7 @@ static void ssd_exit(void)
 	del_gendisk(ssd_bdev.gd);
 
 	// delete request queue
-	blk_cleanup_queue(queue);
+	blk_cleanup_queue(ssd_bdev.queue);
 
 	// unregister the device
 	unregister_blkdev(ssd_major, DRVR_NAME);
@@ -458,6 +491,6 @@ module_param(io, int, S_IRUGO);
 module_init(ssd_init);
 module_exit(ssd_exit);
 
-MODULE_LICENSE("MIT");
+MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("WinSystems,Inc. SSD Device Driver");
 MODULE_AUTHOR("Paul DeMetrotion");

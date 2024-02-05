@@ -9,4 +9,4 @@ else
 fi
 
 # invoke modprobe with all arguments
-/sbin/modprobe $module io=0x210
+/sbin/modprobe $module io=0x220

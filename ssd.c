@@ -1,6 +1,6 @@
 //*****************************************************************************
 //
-//   Copyright 2019, WinSystems Inc.
+//   Copyright 2024, WinSystems Inc.
 //
 //   Permission is hereby granted, free of charge, to any person obtaining a 
 //   copy of this software and associated documentation files (the "Software"), 
@@ -38,10 +38,11 @@
 //      Date         Revision    Change Description
 //    --------       --------    ---------------------------------------------
 //    2019/12/11      1.01      Updated for kernel v4.18
+//    2024/02/03      1.02      Updated for kernel v6.5
 //
 //*****************************************************************************
 
-static char *RCSInfo = "$Id: ssd.c,v 1.01 2019/11/28 20:31:10 Paul DeMetrotion $";
+static char *RCSInfo = "$Id: ssd.c,v 1.02 2024/02/03 20:31:10 Paul DeMetrotion, Benjamin Herrera $";
 
 #ifndef __KERNEL__
 	#define __KERNEL__
@@ -59,8 +60,8 @@ static char *RCSInfo = "$Id: ssd.c,v 1.01 2019/11/28 20:31:10 Paul DeMetrotion $
 #include <linux/errno.h>
 #include <linux/types.h>
 #include <linux/vmalloc.h>
-#include <linux/genhd.h>
-#include <linux/blkdev.h>
+// #include <linux/genhd.h>
+// #include <linux/blkdev.h>
 #include <linux/hdreg.h>
 #include <linux/version.h>
 #include <linux/blk-mq.h>
@@ -68,8 +69,8 @@ static char *RCSInfo = "$Id: ssd.c,v 1.01 2019/11/28 20:31:10 Paul DeMetrotion $
 #include "ssd.h"
 
 #define DRVR_NAME		"ssd"
-#define DRVR_VERSION	"1.0"
-#define DRVR_RELDATE	"29Jun2011"
+#define DRVR_VERSION	"1.02"
+#define DRVR_RELDATE	"03Feb2024"
 
 //#define DEBUG 1
 
@@ -82,7 +83,7 @@ static struct ssd_bdevice {
 	spinlock_t lock;
 	struct gendisk *gd;
 	// request queue
-	struct request_queue *queue;
+	//struct request_queue *queue;
 	struct blk_mq_tag_set tag_set;
 	int wp_flag;
 } ssd_bdev;
@@ -254,7 +255,7 @@ static struct blk_mq_ops mq_ops = {
 ///**********************************************************************
 //			DEVICE OPEN
 ///**********************************************************************
-static int ssd_open(struct block_device *bdev, fmode_t mode)
+static int ssd_open(struct gendisk *disk, blk_mode_t  mode)
 {
 	ssd_bdev.users++;
 
@@ -268,23 +269,13 @@ static int ssd_open(struct block_device *bdev, fmode_t mode)
 ///**********************************************************************
 //			DEVICE CLOSE
 ///**********************************************************************
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4,10,0)
-static int ssd_release(struct gendisk *gd, fmode_t mode)
-#else
-static void ssd_release(struct gendisk *gd, fmode_t mode)
-#endif
-
+static void ssd_release(struct gendisk *disk)
 {
 	#ifdef DEBUG
 	printk ("<1>SSD - ssd_release %d\n", ssd_bdev.users);
 	#endif 
 
 	ssd_bdev.users--;
-
-
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4,10,0)
-	return SUCCESS;
-#endif
 }
 
 ///**********************************************************************
@@ -359,7 +350,7 @@ int ssd_getgeo(struct block_device *bdev, struct hd_geometry *geo)
 // This structure will hold the functions to be called 
 // when a process does something to the device
 ///**********************************************************************
-static struct block_device_operations ssd_fops = {
+static const struct block_device_operations ssd_fops = {
 	.open			=	ssd_open,
 	.release		=	ssd_release,
 	.ioctl			=	ssd_ioctl,
@@ -376,18 +367,24 @@ static int __init ssd_init(void)
 
 	// Sign-on
 	printk("<1>WinSystems, Inc. SSD Linux Device Driver\n");
-	printk("<1>Copyright 2011, All rights reserved\n");
+	printk("<1>Copyright 2024, All rights reserved\n");
 	printk("<1>%s\n", RCSInfo);
 
+
+
+	
+	struct resource* rg = request_region(io, 8, DRVR_NAME);
 	// check and map our I/O region requests
-	if(request_region(io, 8, DRVR_NAME) == NULL)
+	if(!rg)
 	{
 		printk("<1>SSD - Unable to use I/O Address %4Xh\n", io);
+		printk("<1>SSD - Return value %pa\n", rg);
 		return -ENODEV;
 	}
 	else
+	{
 		printk("<1>SSD - Base I/O Address = %4Xh\n", io);
-		
+	}	
 	// register the block device
 	ssd_major = register_blkdev(ssd_init_major, DRVR_NAME);
 
@@ -413,49 +410,68 @@ static int __init ssd_init(void)
 	spin_lock_init(&ssd_bdev.lock);
 
 	// request queue
-    printk("Initializing queue\n");
+        //printk("Initializing queue\n");
 
-    ssd_bdev.queue = blk_mq_init_sq_queue(&ssd_bdev.tag_set, &mq_ops, 128, BLK_MQ_F_SHOULD_MERGE);
+        //ssd_bdev.queue = blk_mq_init_sq_queue(&ssd_bdev.tag_set, &mq_ops, 128, BLK_MQ_F_SHOULD_MERGE);
 
-    if (ssd_bdev.queue == NULL) {
-        printk("Failed to allocate device queue\n");
-        unregister_blkdev(ssd_major, DRVR_NAME);
-        return -ENOMEM;
-    }
+        //if (ssd_bdev.queue == NULL) {
+        //    printk("Failed to allocate device queue\n");
+        //    unregister_blkdev(ssd_major, DRVR_NAME);
+        //    return -ENOMEM;
+        //}
+	//
+	printk("Initializing tag set structure\n");
+	ssd_bdev.tag_set.ops = &mq_ops;
+	ssd_bdev.tag_set.nr_hw_queues = 1;
+	ssd_bdev.tag_set.nr_maps = 1; //Revise Later
+	ssd_bdev.tag_set.queue_depth = 128; //Depth of our data queue
+	ssd_bdev.tag_set.numa_node = NUMA_NO_NODE;
+	ssd_bdev.tag_set.flags = BLK_MQ_F_SHOULD_MERGE;
+       
+        //Allocate tag set
+        ret_val = blk_mq_alloc_tag_set(&ssd_bdev.tag_set);	
 
-    /* Set driver's structure as user data of the queue */
-    ssd_bdev.queue->queuedata = &ssd_bdev;
+	if(ret_val)
+	{
+		blk_mq_free_tag_set(&ssd_bdev.tag_set);	    
+		goto exit_bdev_unregister;
+	}	
+	
 
 	// gendisk
-	ssd_bdev.gd = alloc_disk(SSD_MINORS);
+	// NULL is queue data 
+	ssd_bdev.gd = blk_mq_alloc_disk(&ssd_bdev.tag_set, NULL);
 
-	if (ssd_bdev.gd == NULL)
+	if (IS_ERR(ssd_bdev.gd))
 	{
 		printk("<1>SSD - No memory resources for gendisk structure\n");
 		ret_val = -ENOMEM;
-		goto exit_reqq_delete;
+		goto exit_bdev_unregister;
 	}
 
 	// initialize gendisk
 	ssd_bdev.gd->major = ssd_major;
 	ssd_bdev.gd->first_minor = 0;
 	ssd_bdev.gd->fops = &ssd_fops;
-	ssd_bdev.gd->queue = ssd_bdev.queue;
+	//ssd_bdev.gd->queue = ssd_bdev.queue;
 	ssd_bdev.gd->private_data = &ssd_bdev;
 	strcpy(ssd_bdev.gd->disk_name, DRVR_NAME);
-    printk("Adding disk %s\n", ssd_bdev.gd->disk_name);
+        printk("Adding disk %s\n", ssd_bdev.gd->disk_name);
 	set_capacity(ssd_bdev.gd, NSECTORS * (LOGICAL_BLOCK_SIZE / KERNEL_SECTOR_SIZE));
 
 	// initialize wp flag to off
 	ssd_bdev.wp_flag = 1;
 
 	// add disk at end of init
-	add_disk(ssd_bdev.gd);
+	ret_val = add_disk(ssd_bdev.gd);
+	printk("Add disk complete");	
+	if(ret_val)
+	{
+		printk("Error Adding Device");
+		goto exit_bdev_unregister;
+	}
 
 	return SUCCESS;
-
-exit_reqq_delete:
-	blk_cleanup_queue(ssd_bdev.queue);
 
 exit_bdev_unregister:
 	unregister_blkdev(ssd_major, DRVR_NAME);
@@ -476,7 +492,8 @@ static void ssd_exit(void)
 	del_gendisk(ssd_bdev.gd);
 
 	// delete request queue
-	blk_cleanup_queue(ssd_bdev.queue);
+	//blk_cleanup_queue(ssd_bdev.queue);
+	blk_mq_free_tag_set(&ssd_bdev.tag_set);
 
 	// unregister the device
 	unregister_blkdev(ssd_major, DRVR_NAME);
@@ -494,3 +511,4 @@ module_exit(ssd_exit);
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("WinSystems,Inc. SSD Device Driver");
 MODULE_AUTHOR("Paul DeMetrotion");
+MODULE_AUTHOR("Benjamin Herrera");

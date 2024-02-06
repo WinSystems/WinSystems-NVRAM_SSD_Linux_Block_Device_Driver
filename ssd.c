@@ -424,10 +424,10 @@ static int __init ssd_init(void)
 	ssd_bdev.tag_set.ops = &mq_ops;
 	ssd_bdev.tag_set.nr_hw_queues = 1;
 	ssd_bdev.tag_set.nr_maps = 1; //Revise Later
-	ssd_bdev.tag_set.queue_depth = 128; //Depth of our data queue
+	ssd_bdev.tag_set.queue_depth = 16; //Depth of our data queue
 	ssd_bdev.tag_set.numa_node = NUMA_NO_NODE;
-	ssd_bdev.tag_set.flags = BLK_MQ_F_SHOULD_MERGE;
-       
+	ssd_bdev.tag_set.flags = BLK_MQ_F_SHOULD_MERGE; 
+
         //Allocate tag set
         ret_val = blk_mq_alloc_tag_set(&ssd_bdev.tag_set);	
 
@@ -459,6 +459,7 @@ static int __init ssd_init(void)
         printk("Adding disk %s\n", ssd_bdev.gd->disk_name);
 	set_capacity(ssd_bdev.gd, NSECTORS * (LOGICAL_BLOCK_SIZE / KERNEL_SECTOR_SIZE));
 
+	//blk_queue_max_hw_sectors(ssd_bdev.gd->queue,(NSECTORS));
 	// initialize wp flag to off
 	ssd_bdev.wp_flag = 1;
 
@@ -467,7 +468,7 @@ static int __init ssd_init(void)
 	printk("Add disk complete");	
 	if(ret_val)
 	{
-		printk("Error Adding Device");
+		printk("Error Adding Device: %d", ret_val);
 		goto exit_bdev_unregister;
 	}
 

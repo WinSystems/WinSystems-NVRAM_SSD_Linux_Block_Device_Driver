@@ -181,10 +181,10 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 		printk("SSD ITER: Sector: %zu Segment size: %ld Done: %ld", iter.iter.bi_sector, iter.iter.bi_size, iter.iter.bi_bvec_done);
 		printk("SSD BVEC: LEN: %u OFFSET: %u", bvec.bv_len, bvec.bv_offset);
 
-		if ((blk_rq_cur_sectors(rq) * LOGICAL_BLOCK_SIZE) + blk_rq_bytes(rq) > bdev->size)
+		if ((blk_rq_cur_sectors(rq) * LOGICAL_BLOCK_SIZE) + blk_rq_bytes(rq) > ssd_bdev->size)
 		{
 			#ifdef DEBUG
-			printk ("<1>SSD - Beyond-end write (0x%06lX %ld)\n", (blk_rq_cur_sectors(rq) * LOGICAL_BLOCK_SIZE) + blk_rq_bytes(rq), bdev->size);
+			printk ("<1>SSD - Beyond-end write (0x%06lX %ld)\n", (blk_rq_cur_sectors(rq) * LOGICAL_BLOCK_SIZE) + blk_rq_bytes(rq), ssd_bdev->size);
 			#endif
 			
 			return BLK_STS_IOERR;
@@ -205,7 +205,7 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 			printk ("<1>SSD - Write Protect mode is enabled. To disable run the lock program.\n");
 			
 			#ifdef DEBUG
-			printk ("<1>SSD - Protected write (0x%06lX %ld)\n", (blk_rq_cur_sectors(rq) * LOGICAL_BLOCK_SIZE) + blk_rq_bytes(rq), bdev->size);
+			printk ("<1>SSD - Protected write (0x%06lX %ld)\n", (blk_rq_cur_sectors(rq) * LOGICAL_BLOCK_SIZE) + blk_rq_bytes(rq), ssd_bdev->size);
 			#endif
 		}
 		else

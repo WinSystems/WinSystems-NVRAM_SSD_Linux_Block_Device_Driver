@@ -194,14 +194,13 @@ static void ssd_transfer(struct ssd_bdevice *bdev, sector_t sector, unsigned lon
 /* queue callback function */
 static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_queue_data* bd)
 {
-    unsigned int nr_bytes = 0;
     blk_status_t status = BLK_STS_OK;
     struct request *rq = bd->rq;
 
     /* Start request serving procedure */
     blk_mq_start_request(rq);
 
-	#if DEBUG
+	#ifdef DEBUG
 		unsigned long start = blk_rq_pos(rq) * LOGICAL_BLOCK_SIZE;
 		unsigned long len = blk_rq_cur_bytes(rq) * LOGICAL_BLOCK_SIZE;
 		printk("SSD: REQUEST: START %u, LEN %u", start, len);

@@ -187,7 +187,7 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 			printk ("<1>SSD - Beyond-end write (0x%06lX %ld)\n", offset, nbytes);
 			#endif
 			
-			return;
+			return BLK_STS_IOERR;
 		}
 
 		unsigned char *buffer = kmap_atomic(bvec.bv_page);

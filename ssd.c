@@ -192,7 +192,7 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 
 		unsigned char *buffer = kmap_atomic(bvec.bv_page);
 		
-		if (rq_data_dir(rq) && !(bdev->wp_flag))
+		if (rq_data_dir(rq) && !(ssd_bdev.wp_flag))
 		{
 			unsigned long int sector = bvec.bv_offset * LOGICAL_BLOCK_SIZE;
 			for(unsigned long int offset = 0; offset < bdev.bv_len; offset += 256)
@@ -200,7 +200,7 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 				ssd_write(offset+sector,(buffer+offset));
 			}
 		}
-		else if (rq_data_dir(rq) && bdev->wp_flag)
+		else if (rq_data_dir(rq) && bdev.wp_flag)
 		{
 			printk ("<1>SSD - Write Protect mode is enabled. To disable run the lock program.\n");
 			

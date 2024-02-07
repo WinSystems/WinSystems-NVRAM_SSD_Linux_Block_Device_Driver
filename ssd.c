@@ -232,9 +232,9 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
     /* Start request serving procedure */
     blk_mq_start_request(rq);
 
-    if (ssd_request(rq, &nr_bytes) != 0) {
-        status = BLK_STS_IOERR;
-    }
+    // if (ssd_request(rq, &nr_bytes) != 0) {
+    //     status = BLK_STS_IOERR;
+    // }
 
     /* Notify kernel about processed nr_bytes */
     if (blk_update_request(rq, status, nr_bytes)) {

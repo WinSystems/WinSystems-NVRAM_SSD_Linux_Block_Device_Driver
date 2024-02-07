@@ -191,37 +191,6 @@ static void ssd_transfer(struct ssd_bdevice *bdev, sector_t sector, unsigned lon
 	}
 }
 
-/* Serve requests */
-static int ssd_request(struct request *rq, unsigned int *nr_bytes)
-{
-    int ret = 0;
-    struct bio_vec bvec;
-    struct req_iterator iter;
-	loff_t pos = blk_rq_pos(rq) << SECTOR_SHIFT;
-
-
-    /* Iterate over all requests segments */
-    rq_for_each_segment(bvec, rq, iter)
-    {
-        unsigned long b_len = bvec.bv_len;
-
-        /* Get pointer to the data */
-        void* b_buf = page_address(bvec.bv_page) + bvec.bv_offset;
-
-        /* Simple check that we are not out of the memory bounds */
-        if ((pos + b_len) > ssd_bdev.size) {
-            b_len = (unsigned long)(ssd_bdev.size - pos);
-        }
-
-		ssd_transfer(&ssd_bdev, pos, b_len, b_buf, rq_data_dir(rq));
-
-        /* Increment counters */
-        pos += b_len;
-        *nr_bytes += b_len;
-    }
-
-    return ret;
-}
 /* queue callback function */
 static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_queue_data* bd)
 {
@@ -232,22 +201,16 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
     /* Start request serving procedure */
     blk_mq_start_request(rq);
 
-    // if (ssd_request(rq, &nr_bytes) != 0) {
-    //     status = BLK_STS_IOERR;
-    // }
-
-
-	unsigned long start = blk_rq_pos(rq) << SECTOR_SHIFT;
-	unsigned long len = blk_rq_cur_bytes(rq);
+	unsigned long start = blk_rq_pos(rq) * LOGICAL_BLOCK_SIZE;
+	unsigned long len = blk_rq_cur_bytes(rq) * LOGICAL_BLOCK_SIZE;
 
 	printk("SSD: REQUEST: START %u, LEN %u", start, len);
 
-    // /* Notify kernel about processed nr_bytes */
-    // if (blk_update_request(rq, status, nr_bytes)) {
-    //     /* Shouldn't fail */
-    //     BUG();
-    // }
+	spin_lock_irq(&ssd_bdev->lock);
 
+	ssd_transfer(&ssd_bdev, blk_rq_pos(rq), blk_rq_cur_sectors(rq), bio_data(req->bio), rq_data_dir(rq));
+
+	spin_unlock_irq(&ssd_bdev->lock);
     /* Stop request serving procedure */
     blk_mq_end_request(rq, status);
 

@@ -149,48 +149,6 @@ static void ssd_write(unsigned long offset, char *buffer)
 	#endif
 }
 
-static void ssd_transfer(struct ssd_bdevice *bdev, sector_t sector, unsigned long nsect, char *buffer, int write)
-{
-	unsigned long offset = sector * LOGICAL_BLOCK_SIZE;
-	unsigned long nbytes = nsect * LOGICAL_BLOCK_SIZE;
-
-	if ((offset + nbytes) > bdev->size)
-	{
-		#ifdef DEBUG
-		printk ("<1>SSD - Beyond-end write (0x%06lX %ld)\n", offset, nbytes);
-		#endif
-		
-		return;
-	}
-	
-	if (write && !(bdev->wp_flag))
-	{
-		while (nsect--)
-		{
-			ssd_write(offset, buffer);
-			offset += LOGICAL_BLOCK_SIZE;
-			buffer += LOGICAL_BLOCK_SIZE;
-		}
-	}
-	else if (write && bdev->wp_flag)
-	{
-		printk ("<1>SSD - Write Protect mode is enabled. To disable run the lock program.\n");
-		
-		#ifdef DEBUG
-		printk ("<1>SSD - Protected write (0x%06lX %ld)\n", offset, nbytes);
-		#endif
-	}
-	else
-	{
-		while (nsect--)
-		{
-			ssd_read(offset, buffer);
-			offset += LOGICAL_BLOCK_SIZE;
-			buffer += LOGICAL_BLOCK_SIZE;
-		}
-	}
-}
-
 /* queue callback function */
 static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_queue_data* bd)
 {
@@ -222,6 +180,43 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 
 		printk("SSD ITER: Sector: %zu Segment size: %ld Done: %ld", iter.iter.bi_sector, iter.iter.bi_size, iter.iter.bi_bvec_done);
 		printk("SSD BVEC: LEN: %u OFFSET: %u", bvec.bv_len, bvec.bv_offset);
+
+		if (((blk_rq_cur_sectors(rq) * LOGICAL_BLOCK_SIZE) + blk_rq_bytes(rq)) > bdev->size)
+		{
+			#ifdef DEBUG
+			printk ("<1>SSD - Beyond-end write (0x%06lX %ld)\n", offset, nbytes);
+			#endif
+			
+			return;
+		}
+
+		unsigned char *buffer = kmap_atomic(bvec.bv_page);
+		
+		if (rq_data_dir(rq) && !(bdev->wp_flag))
+		{
+			unsigned long int sector = bvec.bv_offset * LOGICAL_BLOCK_SIZE;
+			for(unsigned long int offset = 0; offset < bdev.bv_len; offset += 256)
+			{
+				ssd_write(offset+sector,(buffer+offset));
+			}
+		}
+		else if (rq_data_dir(rq) && bdev->wp_flag)
+		{
+			printk ("<1>SSD - Write Protect mode is enabled. To disable run the lock program.\n");
+			
+			#ifdef DEBUG
+			printk ("<1>SSD - Protected write (0x%06lX %ld)\n", offset, nbytes);
+			#endif
+		}
+		else
+		{
+			unsigned long int sector = bvec.bv_offset * LOGICAL_BLOCK_SIZE;
+			for(unsigned long int offset = 0; offset < bdev.bv_len; offset += 256)
+			{
+				ssd_read(offset+sector,(buffer+offset));
+			}
+		}
+		kunmap_atomic(buffer);
 
 	}
 

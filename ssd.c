@@ -452,7 +452,7 @@ static int __init ssd_init(void)
 	// initialize gendisk
 	ssd_bdev.gd->major = ssd_major;
 	ssd_bdev.gd->first_minor = 0;
-	ssd_bdev.gd->minor = 1;
+	ssd_bdev.gd->minors = 1;
 	ssd_bdev.gd->fops = &ssd_fops;
 	ssd_bdev.gd->flags |=  GENHD_FL_NO_PART;
 	//ssd_bdev.gd->queue = ssd_bdev.queue;

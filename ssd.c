@@ -237,8 +237,8 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
     // }
 
 
-	unsigned long start = blk_rq_pos(req) << SECTOR_SHIFT;
-	unsigned long len = blk_rq_cur_bytes(req);
+	unsigned long start = blk_rq_pos(rq) << SECTOR_SHIFT;
+	unsigned long len = blk_rq_cur_bytes(rq);
 
 	printk("SSD: REQUEST: START %u, LEN %u", start, len);
 

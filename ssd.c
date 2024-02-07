@@ -205,7 +205,7 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 			printk ("<1>SSD - Write Protect mode is enabled. To disable run the lock program.\n");
 			
 			#ifdef DEBUG
-			printk ("<1>SSD - Protected write (0x%06lX %ld)\n", offset, nbytes);
+			printk ("<1>SSD - Protected write (0x%06lX %ld)\n", (blk_rq_cur_sectors(rq) * LOGICAL_BLOCK_SIZE) + blk_rq_bytes(rq), bdev->size);
 			#endif
 		}
 		else

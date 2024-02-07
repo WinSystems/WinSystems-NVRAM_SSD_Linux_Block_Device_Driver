@@ -236,14 +236,20 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
     //     status = BLK_STS_IOERR;
     // }
 
-    /* Notify kernel about processed nr_bytes */
-    if (blk_update_request(rq, status, nr_bytes)) {
-        /* Shouldn't fail */
-        BUG();
-    }
+
+	unsigned long start = blk_rq_pos(req) << SECTOR_SHIFT;
+	unsigned long len = blk_rq_cur_bytes(req);
+
+	printk("SSD: REQUEST: START %u, LEN %u", start, len):
+
+    // /* Notify kernel about processed nr_bytes */
+    // if (blk_update_request(rq, status, nr_bytes)) {
+    //     /* Shouldn't fail */
+    //     BUG();
+    // }
 
     /* Stop request serving procedure */
-    __blk_mq_end_request(rq, status);
+    blk_mq_end_request(rq, status);
 
     return status;
 }

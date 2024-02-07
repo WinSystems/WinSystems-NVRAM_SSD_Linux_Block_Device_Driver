@@ -195,7 +195,7 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 		if (rq_data_dir(rq) && !(ssd_bdev.wp_flag))
 		{
 			unsigned long int sector = bvec.bv_offset * LOGICAL_BLOCK_SIZE;
-			for(unsigned long int offset = 0; offset < bdev.bv_len; offset += 256)
+			for(unsigned long int offset = 0; offset < bvec.bv_len; offset += 256)
 			{
 				ssd_write(offset+sector,(buffer+offset));
 			}
@@ -211,7 +211,7 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 		else
 		{
 			unsigned long int sector = bvec.bv_offset * LOGICAL_BLOCK_SIZE;
-			for(unsigned long int offset = 0; offset < bdev.bv_len; offset += 256)
+			for(unsigned long int offset = 0; offset < bvec.bv_len; offset += 256)
 			{
 				ssd_read(offset+sector,(buffer+offset));
 			}

@@ -202,8 +202,8 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 
 	#ifdef DEBUG
 		unsigned long start = blk_rq_pos(rq) * LOGICAL_BLOCK_SIZE;
-		unsigned long len = blk_rq_cur_bytes(rq) * LOGICAL_BLOCK_SIZE;
-		printk("SSD: REQUEST: START %u, LEN %u", start, len);
+		unsigned long len = blk_rq_cur_sectors() * LOGICAL_BLOCK_SIZE;
+		printk("SSD: REQUEST: START %lu, LEN %lu, ALL LEN", start, len, blk_rq_bytes(rq));
 	#endif
 	
 
@@ -411,7 +411,7 @@ static int __init ssd_init(void)
 	// initialize gendisk
 	ssd_bdev.gd->major = ssd_major;
 	ssd_bdev.gd->first_minor = 0;
-	ssd_bdev.gd->minors = 1;
+	ssd_bdev.gd->minors = SSD_MINORS;
 	ssd_bdev.gd->fops = &ssd_fops;
 	ssd_bdev.gd->flags |=  GENHD_FL_NO_PART;
 	//ssd_bdev.gd->queue = ssd_bdev.queue;

@@ -209,7 +209,20 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 
 	spin_lock_irq(&ssd_bdev.lock);
 
-	ssd_transfer(&ssd_bdev, blk_rq_pos(rq), blk_rq_cur_sectors(rq), bio_data(rq->bio), rq_data_dir(rq));
+	struct bio *bio;
+	struct bio_vec bvec;
+	struct req_iterator iter;
+	sector_t start_sector;
+
+	//We get the starting sector position
+	start_sector = blk_rq_pos(rq);
+
+	//Iterate over all segments
+	rq_for_each_segment(bvec, rq, iter) {
+
+		printk("SSD ITER: Sector: %zu Segment size: %ld Done: %ld", iter.iter.bi_sector, iter.iter.bi_size, inter.inter.bi_bvec_done);
+
+	}
 
 	spin_unlock_irq(&ssd_bdev.lock);
     /* Stop request serving procedure */

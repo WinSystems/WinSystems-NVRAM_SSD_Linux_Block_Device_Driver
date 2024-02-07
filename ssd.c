@@ -203,7 +203,7 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 	#ifdef DEBUG
 		unsigned long start = blk_rq_pos(rq) * LOGICAL_BLOCK_SIZE;
 		unsigned long len = blk_rq_cur_sectors(rq) * LOGICAL_BLOCK_SIZE;
-		printk("SSD: REQUEST: START %lu, LEN %lu, ALL LEN", start, len, blk_rq_bytes(rq));
+		printk("SSD: REQUEST: START %lu, LEN %lu, ALL LEN %lu", start, len, blk_rq_bytes(rq));
 	#endif
 	
 

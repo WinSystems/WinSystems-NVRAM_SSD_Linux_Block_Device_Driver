@@ -206,11 +206,11 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 
 	printk("SSD: REQUEST: START %u, LEN %u", start, len);
 
-	spin_lock_irq(&ssd_bdev->lock);
+	spin_lock_irq(&ssd_bdev.lock);
 
-	ssd_transfer(&ssd_bdev, blk_rq_pos(rq), blk_rq_cur_sectors(rq), bio_data(req->bio), rq_data_dir(rq));
+	ssd_transfer(&ssd_bdev, blk_rq_pos(rq), blk_rq_cur_sectors(rq), bio_data(rq->bio), rq_data_dir(rq));
 
-	spin_unlock_irq(&ssd_bdev->lock);
+	spin_unlock_irq(&ssd_bdev.lock);
     /* Stop request serving procedure */
     blk_mq_end_request(rq, status);
 

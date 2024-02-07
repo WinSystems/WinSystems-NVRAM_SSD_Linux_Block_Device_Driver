@@ -201,10 +201,12 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
     /* Start request serving procedure */
     blk_mq_start_request(rq);
 
-	unsigned long start = blk_rq_pos(rq) * LOGICAL_BLOCK_SIZE;
-	unsigned long len = blk_rq_cur_bytes(rq) * LOGICAL_BLOCK_SIZE;
-
-	printk("SSD: REQUEST: START %u, LEN %u", start, len);
+	#if DEBUG
+		unsigned long start = blk_rq_pos(rq) * LOGICAL_BLOCK_SIZE;
+		unsigned long len = blk_rq_cur_bytes(rq) * LOGICAL_BLOCK_SIZE;
+		printk("SSD: REQUEST: START %u, LEN %u", start, len);
+	#endif
+	
 
 	spin_lock_irq(&ssd_bdev.lock);
 
@@ -378,17 +380,6 @@ static int __init ssd_init(void)
 	// spin lock
 	spin_lock_init(&ssd_bdev.lock);
 
-	// request queue
-        //printk("Initializing queue\n");
-
-        //ssd_bdev.queue = blk_mq_init_sq_queue(&ssd_bdev.tag_set, &mq_ops, 128, BLK_MQ_F_SHOULD_MERGE);
-
-        //if (ssd_bdev.queue == NULL) {
-        //    printk("Failed to allocate device queue\n");
-        //    unregister_blkdev(ssd_major, DRVR_NAME);
-        //    return -ENOMEM;
-        //}
-	//
 	printk("Initializing tag set structure\n");
 	ssd_bdev.tag_set.ops = &mq_ops;
 	ssd_bdev.tag_set.nr_hw_queues = 1;

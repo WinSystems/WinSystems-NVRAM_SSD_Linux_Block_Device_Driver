@@ -220,7 +220,7 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 	//Iterate over all segments
 	rq_for_each_segment(bvec, rq, iter) {
 
-		printk("SSD ITER: Sector: %zu Segment size: %ld Done: %ld", iter.iter.bi_sector, iter.iter.bi_size, inter.inter.bi_bvec_done);
+		printk("SSD ITER: Sector: %zu Segment size: %ld Done: %ld", iter.iter.bi_sector, iter.iter.bi_size, iter.iter.bi_bvec_done);
 
 	}
 

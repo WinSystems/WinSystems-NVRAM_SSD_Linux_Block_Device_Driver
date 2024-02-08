@@ -178,8 +178,10 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 	//Iterate over all segments
 	rq_for_each_segment(bvec, rq, iter) {
 
-		printk("SSD ITER: Sector: %zu Segment size: %ld Done: %ld", iter.iter.bi_sector, iter.iter.bi_size, iter.iter.bi_bvec_done);
-		printk("SSD BVEC: LEN: %u OFFSET: %u ADDR 0x%08lx", bvec.bv_len, bvec.bv_offset, bvec.bv_page);
+		#ifdef DEBUG
+			printk("SSD ITER: Sector: %zu Segment size: %ld Done: %ld", iter.iter.bi_sector, iter.iter.bi_size, iter.iter.bi_bvec_done);
+			printk("SSD BVEC: LEN: %u OFFSET: %u ADDR 0x%08lx", bvec.bv_len, bvec.bv_offset, bvec.bv_page);
+		#endif
 
 		if ((blk_rq_cur_sectors(rq) * LOGICAL_BLOCK_SIZE) + blk_rq_bytes(rq) > ssd_bdev.size)
 		{
@@ -194,10 +196,10 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 		
 		if (rq_data_dir(rq) && !(ssd_bdev.wp_flag))
 		{
-			unsigned long int sector = bvec.bv_offset * LOGICAL_BLOCK_SIZE;
+			unsigned long int sector = iter.iter.bi_sector * LOGICAL_BLOCK_SIZE;
 			for(unsigned long int offset = 0; offset < bvec.bv_len; offset += 256)
 			{
-				// ssd_write(offset+sector,(buffer+offset));
+				ssd_write(offset+sector,(buffer+offset));
 			}
 		}
 		else if (rq_data_dir(rq) && ssd_bdev.wp_flag)
@@ -210,10 +212,10 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 		}
 		else
 		{
-			unsigned long int sector = bvec.bv_offset * LOGICAL_BLOCK_SIZE;
+			unsigned long int sector = iter.iter.bi_sector * LOGICAL_BLOCK_SIZE;
 			for(unsigned long int offset = 0; offset < bvec.bv_len; offset += 256)
 			{
-				// ssd_read(offset+sector,(buffer+offset));
+				ssd_read(offset+sector,(buffer+offset));
 			}
 		}
 		kunmap_atomic(buffer);

@@ -204,7 +204,8 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 			unsigned long int sector = iter.iter.bi_sector * LOGICAL_BLOCK_SIZE;
 			for(unsigned long int offset = 0; offset < bvec.bv_len; offset += 256)
 			{
-				ssd_write(offset+sector,(buffer+offset));
+				// ssd_write(offset+sector,(buffer+offset));
+				printk("Write block %lu SC: %lu\n", offset, sector+offset);
 			}
 		}
 		else if (rq_data_dir(rq) && ssd_bdev.wp_flag)

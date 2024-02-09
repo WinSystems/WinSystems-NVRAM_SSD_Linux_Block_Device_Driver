@@ -101,7 +101,7 @@ static int io = 0;
 ///**********************************************************************
 static void ssd_read(unsigned long offset, char *buffer)
 {
-	int i, ptr;
+	unsigned long int i, ptr;
 
 	#ifdef DEBUG
 	printk ("<1>SSD - ssd_read\n");
@@ -114,7 +114,7 @@ static void ssd_read(unsigned long offset, char *buffer)
 		outb(offset >> 8, io + 1);
 
 		for (ptr = 0; ptr < 256; ptr++)
-			*buffer++ = inb(io + 2);
+			*(buffer+ptr) = inb(io + 2);
 
 		offset += 256;
 	}
@@ -126,7 +126,7 @@ static void ssd_read(unsigned long offset, char *buffer)
 
 static void ssd_write(unsigned long offset, char *buffer)
 {
-	int i, ptr;
+	unsigned long int i, ptr;
 
 	#ifdef DEBUG
 	printk ("<1>SSD - ssd_write\n");
@@ -139,7 +139,7 @@ static void ssd_write(unsigned long offset, char *buffer)
 		outb(offset >> 8, io + 1);
 
 		for (ptr = 0; ptr < 256; ptr++)
-			outb(*buffer++, io + 2);
+			outb(*(buffer + ptr), io + 2);
 
 		offset += 256;
 	}
@@ -202,12 +202,12 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 		{
 			// Allocate a buffer for the entire request
 			unsigned long int sector = iter.iter.bi_sector * LOGICAL_BLOCK_SIZE;
-			for(unsigned long int offset = 0; offset < bvec.bv_len; offset += 256)
+			for(unsigned long int offset = 0; offset < bvec.bv_len; offset += 512)
 			{
-				// ssd_write(offset+sector,(buffer+offset));
 				printk("Write block %lu SC: %lu\n", offset, sector+offset);
 				print_hex_dump_bytes("Data Block 256 Byte: ", DUMP_PREFIX_ADDRESS,
-				     (buffer+offset), 256);
+				     (buffer+offset), 512);
+				ssd_write((offset+sector),(buffer+offset));
 			}
 		}
 		else if (rq_data_dir(rq) && ssd_bdev.wp_flag)
@@ -221,12 +221,12 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 		else
 		{
 			unsigned long int sector = iter.iter.bi_sector * LOGICAL_BLOCK_SIZE;
-			for(unsigned long int offset = 0; offset < bvec.bv_len; offset += 256)
+			for(unsigned long int offset = 0; offset < bvec.bv_len; offset += 512)
 			{
 				printk("Read block %lu SC: %lu\n", offset, sector+offset);
 				print_hex_dump_bytes("Data Block 256 Byte: ", DUMP_PREFIX_ADDRESS,
-				     (buffer+offset), 256);
-				// ssd_read(offset+sector, buffer);
+				     (buffer+offset), 512);
+				ssd_read((offset+sector), (buffer+offset));
 			}
 		}
 		kunmap_local(buffer);

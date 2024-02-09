@@ -114,7 +114,7 @@ static void ssd_read(unsigned long offset, char *buffer)
 		outb(offset >> 8, io + 1);
 
 		for (ptr = 0; ptr < 256; ptr++)
-			*(buffer+ptr+(i*LOGICAL_BLOCK_SIZE) = inb(io + 2);
+			*(buffer+ptr+(i*LOGICAL_BLOCK_SIZE)) = inb(io + 2);
 
 		offset += 256;
 	}

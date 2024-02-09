@@ -204,9 +204,11 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 			unsigned long int sector = iter.iter.bi_sector * LOGICAL_BLOCK_SIZE;
 			for(unsigned long int offset = 0; offset < bvec.bv_len; offset += 512)
 			{
+				#ifdef DEBUG
 				printk("Write block %lu SC: %lu\n", offset, sector+offset);
 				print_hex_dump_bytes("Data Block 512 Byte: ", DUMP_PREFIX_ADDRESS,
 				     (buffer+offset), 512);
+				#endif
 				ssd_write((offset+sector),(buffer+offset));
 			}
 		}
@@ -223,10 +225,14 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 			unsigned long int sector = iter.iter.bi_sector * LOGICAL_BLOCK_SIZE;
 			for(unsigned long int offset = 0; offset < bvec.bv_len; offset += 512)
 			{
+				#ifdef DEBUG
 				printk("Read block %lu SC: %lu\n", offset, sector+offset);
+				#endif
 				ssd_read((offset+sector), (buffer+offset));
+				#ifdef DEBUG
 				print_hex_dump_bytes("Data Block 512 Byte: ", DUMP_PREFIX_ADDRESS,
 				     (buffer+offset), 512);
+				#endif
 			}
 		}
 		kunmap_local(buffer);

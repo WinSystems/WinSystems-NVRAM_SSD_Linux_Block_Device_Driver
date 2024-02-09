@@ -192,7 +192,7 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 			return BLK_STS_IOERR;
 		}
 
-		unsigned char *buffer =  bvec_kmap_local(blk_rq_bytes(rq), GFP_KERNEL);
+		unsigned char *buffer =  bvec_kmap_local(&bvec);
 		if (!buffer) {
 			spin_unlock_irq(&ssd_bdev.lock);
 			return BLK_STS_RESOURCE;

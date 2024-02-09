@@ -205,7 +205,7 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 			for(unsigned long int offset = 0; offset < bvec.bv_len; offset += 512)
 			{
 				printk("Write block %lu SC: %lu\n", offset, sector+offset);
-				print_hex_dump_bytes("Data Block 256 Byte: ", DUMP_PREFIX_ADDRESS,
+				print_hex_dump_bytes("Data Block 512 Byte: ", DUMP_PREFIX_ADDRESS,
 				     (buffer+offset), 512);
 				ssd_write((offset+sector),(buffer+offset));
 			}
@@ -225,7 +225,7 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 			{
 				printk("Read block %lu SC: %lu\n", offset, sector+offset);
 				ssd_read((offset+sector), (buffer+offset));
-				print_hex_dump_bytes("Data Block 256 Byte: ", DUMP_PREFIX_ADDRESS,
+				print_hex_dump_bytes("Data Block 512 Byte: ", DUMP_PREFIX_ADDRESS,
 				     (buffer+offset), 512);
 			}
 		}

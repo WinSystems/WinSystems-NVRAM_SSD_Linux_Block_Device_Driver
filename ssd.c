@@ -220,7 +220,7 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 			unsigned long int sector = iter.iter.bi_sector * LOGICAL_BLOCK_SIZE;
 			for(unsigned long int offset = 0; offset < bvec.bv_len; offset += 256)
 			{
-				ssd_read(offset+sector,(buffer+offset));
+				// ssd_read(offset+sector, buffer);
 			}
 		}
 		kunmap_local(buffer);

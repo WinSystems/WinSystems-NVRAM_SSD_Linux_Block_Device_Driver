@@ -180,7 +180,8 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 
 		#ifdef DEBUG
 			printk("SSD ITER: Sector: %zu Segment size: %ld Done: %ld", iter.iter.bi_sector, iter.iter.bi_size, iter.iter.bi_bvec_done);
-			printk("SSD BVEC: LEN: %u OFFSET: %u ADDR 0x%08lx", bvec.bv_len, bvec.bv_offset, bvec.bv_page);
+			printk("SSD BVEC: LEN: %u OFFSET: %u A
+			DDR 0x%08lx", bvec.bv_len, bvec.bv_offset, bvec.bv_page);
 		#endif
 
 		if ((blk_rq_cur_sectors(rq) * LOGICAL_BLOCK_SIZE) + blk_rq_bytes(rq) > ssd_bdev.size)
@@ -192,7 +193,12 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 			return BLK_STS_IOERR;
 		}
 
-		unsigned char *buffer = kmap_atomic(bvec.bv_page);
+		// Allocate a buffer for the entire request
+		unsigned char *buffer = kmalloc(blk_rq_bytes(rq), GFP_KERNEL);
+		if (!buffer) {
+			spin_unlock_irq(&ssd_bdev.lock);
+			return BLK_STS_RESOURCE;
+		}
 		
 		if (rq_data_dir(rq) && !(ssd_bdev.wp_flag))
 		{
@@ -218,7 +224,8 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 				ssd_read(offset+sector,(buffer+offset));
 			}
 		}
-		kunmap_atomic(buffer);
+		kfree(buffer);
+
 
 	}
 

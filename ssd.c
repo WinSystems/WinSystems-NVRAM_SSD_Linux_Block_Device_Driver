@@ -180,8 +180,7 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 
 		#ifdef DEBUG
 			printk("SSD ITER: Sector: %zu Segment size: %ld Done: %ld", iter.iter.bi_sector, iter.iter.bi_size, iter.iter.bi_bvec_done);
-			printk("SSD BVEC: LEN: %u OFFSET: %u A
-			DDR 0x%08lx", bvec.bv_len, bvec.bv_offset, bvec.bv_page);
+			printk("SSD BVEC: LEN: %u OFFSET: %u ADDR 0x%08lx", bvec.bv_len, bvec.bv_offset, bvec.bv_page);
 		#endif
 
 		if ((blk_rq_cur_sectors(rq) * LOGICAL_BLOCK_SIZE) + blk_rq_bytes(rq) > ssd_bdev.size)

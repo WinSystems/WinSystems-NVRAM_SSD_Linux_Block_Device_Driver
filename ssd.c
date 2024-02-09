@@ -206,6 +206,8 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 			{
 				// ssd_write(offset+sector,(buffer+offset));
 				printk("Write block %lu SC: %lu\n", offset, sector+offset);
+				print_hex_dump_bytes("Data Block 256 Byte: ", DUMP_PREFIX_ADDRESS,
+				     (buffer+offset), 256);
 			}
 		}
 		else if (rq_data_dir(rq) && ssd_bdev.wp_flag)
@@ -222,6 +224,8 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 			for(unsigned long int offset = 0; offset < bvec.bv_len; offset += 256)
 			{
 				printk("Read block %lu SC: %lu\n", offset, sector+offset);
+				print_hex_dump_bytes("Data Block 256 Byte: ", DUMP_PREFIX_ADDRESS,
+				     (buffer+offset), 256);
 				// ssd_read(offset+sector, buffer);
 			}
 		}

@@ -39,10 +39,10 @@
 //    --------       --------    ---------------------------------------------
 //    2019/12/11      1.01      Updated for kernel v4.18
 //    2024/02/03      1.02      Updated for kernel v6.5
-//
+//    2024/02/15      1.021     Updated for kernel v6.1
 //*****************************************************************************
 
-static char *RCSInfo = "$Id: ssd.c,v 1.02 2024/02/03 20:31:10 Paul DeMetrotion, Benjamin Herrera $";
+static char *RCSInfo = "$Id: ssd.c,v 1.021 2024/02/03 20:31:10 Paul DeMetrotion, Benjamin Herrera $";
 
 #ifndef __KERNEL__
 	#define __KERNEL__
@@ -69,8 +69,8 @@ static char *RCSInfo = "$Id: ssd.c,v 1.02 2024/02/03 20:31:10 Paul DeMetrotion, 
 #include "ssd.h"
 
 #define DRVR_NAME		"ssd"
-#define DRVR_VERSION	"1.02"
-#define DRVR_RELDATE	"03Feb2024"
+#define DRVR_VERSION	"1.021"
+#define DRVR_RELDATE	"15Feb2024"
 
 //#define DEBUG 1
 
@@ -152,11 +152,16 @@ static void ssd_write(unsigned long offset, char *buffer)
 /* queue callback function */
 static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_queue_data* bd)
 {
-    blk_status_t status = BLK_STS_OK;
-    struct request *rq = bd->rq;
+    	blk_status_t status = BLK_STS_OK;
+    	struct request *rq = bd->rq;
+	unsigned char* buffer;
+	struct bio_vec bvec;
+	struct req_iterator iter;
+	sector_t start_sector;
 
-    /* Start request serving procedure */
-    blk_mq_start_request(rq);
+
+    	/* Start request serving procedure */
+    	blk_mq_start_request(rq);
 
 	#ifdef DEBUG
 		unsigned long start = blk_rq_pos(rq) * LOGICAL_BLOCK_SIZE;
@@ -166,11 +171,6 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 	
 
 	spin_lock_irq(&ssd_bdev.lock);
-
-	struct bio *bio;
-	struct bio_vec bvec;
-	struct req_iterator iter;
-	sector_t start_sector;
 
 	//We get the starting sector position
 	start_sector = blk_rq_pos(rq);
@@ -192,7 +192,7 @@ static blk_status_t queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_que
 			return BLK_STS_IOERR;
 		}
 
-		unsigned char *buffer =  bvec_kmap_local(&bvec);
+		buffer = bvec_kmap_local(&bvec);
 		if (!buffer) {
 			spin_unlock_irq(&ssd_bdev.lock);
 			return BLK_STS_RESOURCE;
@@ -254,7 +254,7 @@ static struct blk_mq_ops mq_ops = {
 ///**********************************************************************
 //			DEVICE OPEN
 ///**********************************************************************
-static int ssd_open(struct gendisk *disk, blk_mode_t  mode)
+static int ssd_open(struct block_device *disk, fmode_t mode)
 {
 	ssd_bdev.users++;
 
@@ -268,7 +268,7 @@ static int ssd_open(struct gendisk *disk, blk_mode_t  mode)
 ///**********************************************************************
 //			DEVICE CLOSE
 ///**********************************************************************
-static void ssd_release(struct gendisk *disk)
+static void ssd_release(struct gendisk *disk, fmode_t mode)
 {
 	#ifdef DEBUG
 	printk ("<1>SSD - ssd_release %d\n", ssd_bdev.users);
@@ -363,7 +363,7 @@ static const struct block_device_operations ssd_fops = {
 static int __init ssd_init(void)
 {
 	int ret_val;
-
+	struct resource* rg;
 	// Sign-on
 	printk("<1>WinSystems, Inc. SSD Linux Device Driver\n");
 	printk("<1>Copyright 2024, All rights reserved\n");
@@ -372,7 +372,7 @@ static int __init ssd_init(void)
 
 
 	
-	struct resource* rg = request_region(io, 8, DRVR_NAME);
+	rg = request_region(io, 8, DRVR_NAME);
 	// check and map our I/O region requests
 	if(!rg)
 	{
